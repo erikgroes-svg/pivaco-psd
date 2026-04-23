@@ -6,6 +6,14 @@ const sql = neon(process.env.DATABASE_URL!)
 export { sql }
 
 // Projects
+export async function getAllProjects(): Promise<Project[]> {
+  const rows = await sql`
+    SELECT * FROM projects
+    ORDER BY created_at DESC
+  `
+  return rows as Project[]
+}
+
 export async function getProjectsByUser(userId: string): Promise<Project[]> {
   const rows = await sql`
     SELECT * FROM projects
