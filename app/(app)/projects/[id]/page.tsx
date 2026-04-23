@@ -20,7 +20,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
 
   const project = await getProjectById(params.id)
   if (!project) notFound()
-  if (project.created_by !== userId) notFound()
+  // alle ingelogde gebruikers mogen projecten bekijken
 
   const date = new Date(project.created_at).toLocaleDateString('nl-BE', {
     day: '2-digit',

@@ -1,12 +1,12 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import Link from 'next/link'
-import { getProjectsByUser } from '@/lib/db'
+import { getAllProjects } from '@/lib/db'
 import DashboardTable from '@/components/psd/DashboardTable'
 
 export default async function DashboardPage() {
   const { userId } = auth()
   const user = await currentUser()
-  const projects = userId ? await getProjectsByUser(userId) : []
+  const projects = userId ? await getAllProjects() : []
 
   const userName = user?.firstName
     ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`

@@ -56,7 +56,7 @@ export async function createProject(data: {
 }): Promise<Project> {
   const rows = await sql`
     INSERT INTO projects (project_number, project_name, customer_name, project_type, project_leader, notes, start_date, end_date, created_by)
-    VALUES (${data.project_number}, ${data.project_name}, ${data.customer_name}, ${data.project_type}, ${data.project_leader}, ${data.notes}, ${data.start_date}, ${data.end_date}, ${data.created_by})
+    VALUES (${data.project_number}, ${data.project_name}, ${data.project_type}, ${data.project_leader}, ${data.notes}, ${data.start_date}, ${data.end_date}, ${data.created_by})
     RETURNING *
   `
   return rows[0] as Project

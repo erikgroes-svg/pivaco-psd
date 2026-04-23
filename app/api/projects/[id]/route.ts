@@ -11,7 +11,6 @@ export async function GET(
 
   const project = await getProjectById(params.id)
   if (!project) return NextResponse.json({ error: 'Project niet gevonden' }, { status: 404 })
-  if (project.created_by !== userId) return NextResponse.json({ error: 'Geen toegang' }, { status: 403 })
 
   return NextResponse.json(project)
 }
@@ -25,7 +24,6 @@ export async function DELETE(
 
   const project = await getProjectById(params.id)
   if (!project) return NextResponse.json({ error: 'Project niet gevonden' }, { status: 404 })
-  if (project.created_by !== userId) return NextResponse.json({ error: 'Geen toegang' }, { status: 403 })
 
   await deleteProject(params.id)
   return NextResponse.json({ success: true })
