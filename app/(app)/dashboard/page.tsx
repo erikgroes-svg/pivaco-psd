@@ -1,16 +1,35 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import Link from 'next/link'
-import { getAllProjects } from '@/lib/db'
-import DashboardTable from '@/components/psd/DashboardTable'
+import { getProjectsGroupedByUser } from '@/lib/db'
+import GroupedDashboard from '@/components/psd/GroupedDashboard'
 
 export default async function DashboardPage() {
   const { userId } = auth()
-  const user = await currentUser()
-  const projects = userId ? await getAllProjects() : []
+  const groups = userId ? await getProjectsGroupedByUser() : []
 
-  const userName = user?.firstName
-    ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`
-    : user?.emailAddresses?.[0]?.emailAddress ?? 'Gebruiker'
+  // Gebruikersnamen ophalen via Clerk
+  const userIds = groups.map((g) => g.created_by)
+  const userNames: Record<string, string> = {}
+
+  for (const uid of userIds) {
+    try {
+      const user = await clerkClient.users.getUser(uid)
+      userNames[uid] = user.firstName
+        ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`
+        : user.emailAddresses?.[0]?.emailAddress ?? uid
+    } catch {
+      userNames[uid] = uid
+    }
+  }
+
+  const totalCount = groups.reduce((acc, g) => acc + g.projects.length, 0)
+
+  // Huidige gebruiker bovenaan
+  const sorted = [...groups].sort((a, b) => {
+    if (a.created_by === userId) return -1
+    if (b.created_by === userId) return 1
+    return 0
+  })
 
   return (
     <div className="space-y-6">
@@ -18,11 +37,9 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-900">Project Start Documenten</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Ingelogd als <span className="font-medium text-gray-700">{userName}</span>
-            {' · '}
-            {projects.length === 0
+            {totalCount === 0
               ? 'Nog geen PSD\'s aangemaakt'
-              : `${projects.length} project${projects.length !== 1 ? 'en' : ''}`}
+              : `${totalCount} project${totalCount !== 1 ? 'en' : ''} · ${groups.length} gebruiker${groups.length !== 1 ? 's' : ''}`}
           </p>
         </div>
         <Link href="/projects/new" className="btn-primary">
@@ -30,7 +47,7 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {projects.length === 0 ? (
+      {totalCount === 0 ? (
         <div className="card p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -42,7 +59,7 @@ export default async function DashboardPage() {
           <Link href="/projects/new" className="btn-primary">Eerste PSD aanmaken</Link>
         </div>
       ) : (
-        <DashboardTable projects={projects} />
+        <GroupedDashboard groups={sorted} userNames={userNames} currentUserId={userId ?? ''} />
       )}
     </div>
   )

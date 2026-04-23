@@ -56,7 +56,7 @@ export async function createProject(data: {
 }): Promise<Project> {
   const rows = await sql`
     INSERT INTO projects (project_number, project_name, customer_name, project_type, project_leader, notes, start_date, end_date, created_by)
-    VALUES (${data.project_number}, ${data.project_name}, ${data.project_type}, ${data.project_leader}, ${data.notes}, ${data.start_date}, ${data.end_date}, ${data.created_by})
+    VALUES (${data.project_number}, ${data.project_name}, ${data.customer_name}, ${data.project_type}, ${data.project_leader}, ${data.notes}, ${data.start_date}, ${data.end_date}, ${data.created_by})
     RETURNING *
   `
   return rows[0] as Project
@@ -112,4 +112,22 @@ export async function logGenerationRun(data: {
     INSERT INTO generation_runs (project_id, model_name, prompt_version, success, error_message)
     VALUES (${data.project_id}, ${data.model_name}, ${data.prompt_version}, ${data.success}, ${data.error_message})
   `
+}
+
+// Gebruikers ophalen met hun Clerk user ID en naam
+export async function getProjectsGroupedByUser(): Promise<{ created_by: string; projects: Project[] }[]> {
+  const rows = await sql`
+    SELECT * FROM projects
+    ORDER BY created_by, created_at DESC
+  `
+  const projects = rows as Project[]
+
+  // Groeperen per created_by
+  const map = new Map<string, Project[]>()
+  for (const p of projects) {
+    if (!map.has(p.created_by)) map.set(p.created_by, [])
+    map.get(p.created_by)!.push(p)
+  }
+
+  return Array.from(map.entries()).map(([created_by, projects]) => ({ created_by, projects }))
 }
