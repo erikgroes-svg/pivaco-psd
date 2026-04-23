@@ -1,11 +1,16 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import { getProjectsByUser } from '@/lib/db'
-import PsdCard from '@/components/psd/PsdCard'
+import DashboardTable from '@/components/psd/DashboardTable'
 
 export default async function DashboardPage() {
   const { userId } = auth()
+  const user = await currentUser()
   const projects = userId ? await getProjectsByUser(userId) : []
+
+  const userName = user?.firstName
+    ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`
+    : user?.emailAddresses?.[0]?.emailAddress ?? 'Gebruiker'
 
   return (
     <div className="space-y-6">
@@ -13,6 +18,8 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-900">Project Start Documenten</h1>
           <p className="text-sm text-gray-500 mt-0.5">
+            Ingelogd als <span className="font-medium text-gray-700">{userName}</span>
+            {' · '}
             {projects.length === 0
               ? 'Nog geen PSD\'s aangemaakt'
               : `${projects.length} project${projects.length !== 1 ? 'en' : ''}`}
@@ -32,16 +39,10 @@ export default async function DashboardPage() {
             </svg>
           </div>
           <p className="text-gray-500 text-sm mb-4">Nog geen PSD's aangemaakt.</p>
-          <Link href="/projects/new" className="btn-primary">
-            Eerste PSD aanmaken
-          </Link>
+          <Link href="/projects/new" className="btn-primary">Eerste PSD aanmaken</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
-            <PsdCard key={project.id} project={project} />
-          ))}
-        </div>
+        <DashboardTable projects={projects} />
       )}
     </div>
   )
